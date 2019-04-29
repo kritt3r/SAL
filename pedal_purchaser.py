@@ -20,6 +20,8 @@ import re
 import urllib.request as urlreq
 import time
 import win32com.client as win32
+import pandas as pd
+
 
 outlook = win32.Dispatch('outlook.application')
 
@@ -29,8 +31,8 @@ os.getcwd()
 os.listdir()
 
 the_url = 'https://messages.google.com/web/conversations/236?redirected=true'
-umlauf = 'https://standert.de/collections/umlaufbahn/products/umlaufbahn-ep-3-frameset-deep-space-black-1'
-heusin = 'https://heusinkveld.com/products/sim-pedals/sim-pedals-sprint/?v=7516fd43adaa'
+bike_frame = 'https://standert.de/collections/umlaufbahn/products/umlaufbahn-ep-3-frameset-deep-space-black-1'
+pedals = 'https://heusinkveld.com/products/sim-pedals/sim-pedals-sprint/?v=7516fd43adaa'
 
 email = 'pranav_singh@live.com'
 kyle = 'Kpgmccabe@gmail.com'
@@ -56,10 +58,11 @@ def snippet(req, text, extra_char = 1000):
     loc = req.text.find(text)
     return req.text[loc-100:loc +extra_char]
 
-def main(url = the_url,wait_time = 180,rec = kyle):
+def main(url = the_url, wait_time = 180,rec = kyle):
     splitter = '}'
     page_before = page_get(url).text
     page_before_split = page_before.split(splitter)
+    
     page_now = page_before
     while page_now == page_before:
         print('Not yet...')
@@ -88,3 +91,21 @@ def emailer(rec = kyle, body = 'YOUR SHIT IS HERE'):
     mail.Subject = 'Stock Alert'
     mail.Body  = body
     mail.Send()
+    
+def look_up(url = pedals,search_word = 'stock',wait_time = 180):
+    df = pd.DataFrame()
+    splitter = '}'
+    page = page_get(url).text
+    df['before'] = page.split(splitter)
+    df['now'] = df['before']
+    
+    df['keyword'] = df.apply(lambda x: search_word in x['before'], axis = 1)
+    df['match'] = df.apply(lambda x: x['before'] == x['now'],axis = 1)
+    print(df[df['keyword'] == True]['match'].head())
+    while df[df['keyword'] == True]['match'].any():
+        print('Not yet...')
+        page = page_get(url).text
+        df['now'] = page.split(splitter)
+        df['match'] = df.apply(lambda x: x['before'] == x['now'],axis = 1)
+        time.sleep(wait_time)
+    print(df[df['keyword'] == True])
